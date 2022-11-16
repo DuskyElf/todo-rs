@@ -1,3 +1,10 @@
+use todo_rs;
+use pancurses::{initscr, endwin};
+
 fn main() {
-    println!("Hello, world!");
+    let window = initscr();
+    window.printw("TODO List:");
+    window.refresh();
+    window.getch();
+    endwin();
 }
