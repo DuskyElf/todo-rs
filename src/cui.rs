@@ -33,10 +33,9 @@ fn ui_loop(win: pc::Window) {
     let mut key_input = None;
     loop {
         if let Some(key) = key_input {
-            match key {
-                pc::Input::Character('q') => break,
-                pc::Input::Character('\t') => cui_state.curr_tab.toggle(),
-                _ => (),
+            // `handle_input` returns false to exit the ui_loop
+            if !handle_input(key, &mut cui_state) {
+                break;
             }
         }
 
@@ -44,6 +43,17 @@ fn ui_loop(win: pc::Window) {
 
         key_input = win.getch();
     }
+}
+
+// Returns false to exit the ui_loop
+fn handle_input(key: pc::Input, cui_state: &mut CuiState) -> bool {
+    match key {
+        pc::Input::Character('q') => return false,
+        pc::Input::Character('\t') => cui_state.curr_tab.toggle(),
+        _ => (),
+    }
+
+    true
 }
 
 fn render(win: &pc::Window, cui_state: &CuiState) {
