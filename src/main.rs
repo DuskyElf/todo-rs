@@ -1,3 +1,5 @@
+use todo_rs::core;
+
 fn main() {
-    todo_rs::cui::start();
+    core::start();
 }

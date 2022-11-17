@@ -1,13 +1,5 @@
 use pancurses as pc;
-
-struct CuiState {
-    curr_tab: Tab,
-}
-
-enum Tab {
-    Todo,
-    Done,
-}
+use crate::{Tab, CuiResponse, CuiState};
 
 impl Tab {
     fn toggle(&mut self) {
@@ -18,31 +10,32 @@ impl Tab {
     }
 }
 
-pub fn start() {
-    let window = pc::initscr();
+pub fn init() -> CuiState {
+    let win = pc::initscr();
     pc::curs_set(0);
-    ui_loop(window);
-    pc::endwin();
+    CuiState {
+        win,
+        curr_tab: Tab::Todo,
+    }
 }
 
-fn ui_loop(win: pc::Window) {
-    let mut cui_state = CuiState {
-        curr_tab: Tab::Todo,
-    };
-
-    let mut key_input = None;
-    loop {
-        if let Some(key) = key_input {
-            // `handle_input` returns false to exit the ui_loop
-            if !handle_input(key, &mut cui_state) {
-                break;
-            }
+pub fn update(cui_state: &mut CuiState, key_input: Option<pc::Input>) -> CuiResponse {
+    if let Some(key) = key_input {
+        // `handle_input` returns false to exit the ui_loop
+        if !handle_input(key, cui_state) {
+            return CuiResponse::Quit;
         }
-
-        render(&win, &cui_state);
-
-        key_input = win.getch();
     }
+
+    render(&cui_state);
+
+    CuiResponse::UserInput(
+        cui_state.win.getch()
+    )
+}
+
+pub fn end() {
+    pc::endwin();
 }
 
 // Returns false to exit the ui_loop
@@ -56,18 +49,18 @@ fn handle_input(key: pc::Input, cui_state: &mut CuiState) -> bool {
     true
 }
 
-fn render(win: &pc::Window, cui_state: &CuiState) {
-    win.clear();
-    win.printw("Simple Todo App:\n\n");
+fn render(cui_state: &CuiState) {
+    cui_state.win.clear();
+    cui_state.win.printw("Simple Todo App:\n\n");
 
     match cui_state.curr_tab {
         Tab::Todo => {
-            win.printw("[ Todo ]  Done");
+            cui_state.win.printw("[ Todo ]  Done");
         }
         Tab::Done => {
-            win.printw("  Todo  [ Done ]");
+            cui_state.win.printw("  Todo  [ Done ]");
         }
     }
 
-    win.refresh();
+    cui_state.win.refresh();
 }

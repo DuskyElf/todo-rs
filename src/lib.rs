@@ -1,3 +1,4 @@
 mod models;
 pub mod cui;
-use models::*;
+pub mod core;
+pub use models::*;
