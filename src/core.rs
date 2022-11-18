@@ -12,12 +12,12 @@ pub fn start() {
         ],
     };
 
-    main_loop();
+    main_loop(&mut core_state);
 }
 
-fn main_loop() {
+fn main_loop(core_state: &mut CoreState) {
     let mut key_input = None;
-    let mut cui_state = CuiState::init();
+    let mut cui_state = CuiState::init(core_state);
 
     loop {
         let responce = cui_state.update(key_input);

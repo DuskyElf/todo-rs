@@ -10,9 +10,12 @@ pub enum Tab {
     Done,
 }
 
-pub struct CuiState {
+pub struct CuiState<'a> {
     pub curr_tab: Tab,
     pub win: pc::Window,
+    pub todo_curs: usize,
+    pub done_curs: usize,
+    pub core_state: &'a CoreState,
 }
 
 pub enum CuiResponse {
