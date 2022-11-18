@@ -71,7 +71,7 @@ impl CuiState<'_> {
                 if self.todo_curs < self.core_state.todo_list.len() - 1
                     => self.todo_curs += 1,
             Tab::Done
-                if self.todo_curs < self.core_state.todo_list.len() - 1
+                if self.todo_curs < self.core_state.done_list.len() - 1
                     => self.todo_curs += 1,
             _ => (),
         }
@@ -80,6 +80,7 @@ impl CuiState<'_> {
     fn render(&self) {
         self.win.clear();
         self.win.printw("Simple Todo App:\n");
+        self.win.printw("------------------\n");
 
         match self.curr_tab {
             Tab::Todo => {
