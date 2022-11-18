@@ -23,7 +23,7 @@ impl CuiState<'_> {
         }
     }
 
-    pub fn end() {
+    pub fn end(&self) {
         pc::endwin();
     }
 

@@ -29,5 +29,5 @@ fn main_loop(core_state: &mut CoreState) {
         }
     }
 
-    CuiState::end();
+    cui_state.end();
 }
