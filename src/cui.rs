@@ -10,57 +10,60 @@ impl Tab {
     }
 }
 
-pub fn init() -> CuiState {
-    let win = pc::initscr();
-    pc::curs_set(0);
-    CuiState {
-        win,
-        curr_tab: Tab::Todo,
-    }
-}
-
-pub fn update(cui_state: &mut CuiState, key_input: Option<pc::Input>) -> CuiResponse {
-    if let Some(key) = key_input {
-        // `handle_input` returns false to exit the ui_loop
-        if !handle_input(key, cui_state) {
-            return CuiResponse::Quit;
+impl CuiState {
+    pub fn init() -> CuiState {
+        let win = pc::initscr();
+        pc::curs_set(0);
+        CuiState {
+            win,
+            curr_tab: Tab::Todo,
         }
     }
 
-    render(&cui_state);
-
-    CuiResponse::UserInput(
-        cui_state.win.getch()
-    )
-}
-
-pub fn end() {
-    pc::endwin();
-}
-
-// Returns false to exit the ui_loop
-fn handle_input(key: pc::Input, cui_state: &mut CuiState) -> bool {
-    match key {
-        pc::Input::Character('q') => return false,
-        pc::Input::Character('\t') => cui_state.curr_tab.toggle(),
-        _ => (),
+    pub fn end() {
+        pc::endwin();
     }
 
-    true
-}
-
-fn render(cui_state: &CuiState) {
-    cui_state.win.clear();
-    cui_state.win.printw("Simple Todo App:\n\n");
-
-    match cui_state.curr_tab {
-        Tab::Todo => {
-            cui_state.win.printw("[ Todo ]  Done");
+    pub fn update(&mut self, key_input: Option<pc::Input>) -> CuiResponse {
+        if let Some(key) = key_input {
+            // `handle_input` returns false to exit the ui_loop
+            if !self.handle_input(key) {
+                return CuiResponse::Quit;
+            }
         }
-        Tab::Done => {
-            cui_state.win.printw("  Todo  [ Done ]");
-        }
+
+        self.render();
+
+        CuiResponse::UserInput(
+            self.win.getch()
+        )
     }
 
-    cui_state.win.refresh();
+    // Returns false to exit the ui_loop
+    fn handle_input(&mut self, key: pc::Input) -> bool {
+        match key {
+            pc::Input::Character('q') => return false,
+            pc::Input::Character('\t') => self.curr_tab.toggle(),
+            _ => (),
+        }
+
+        true
+    }
+
+    fn render(&self) {
+        self.win.clear();
+        self.win.printw("Simple Todo App:\n\n");
+
+        match self.curr_tab {
+            Tab::Todo => {
+                self.win.printw("[ Todo ]  Done");
+            }
+            Tab::Done => {
+                self.win.printw("  Todo  [ Done ]");
+            }
+        }
+
+        self.win.refresh();
+    }
 }
+

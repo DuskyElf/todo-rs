@@ -1,4 +1,4 @@
-use crate::{self as lib, cui, CoreState};
+use crate::{self as lib, CoreState, CuiState};
 
 pub fn start() {
     let mut core_state = CoreState {
@@ -17,10 +17,10 @@ pub fn start() {
 
 fn main_loop() {
     let mut key_input = None;
-    let mut cui_state = cui::init();
+    let mut cui_state = CuiState::init();
 
     loop {
-        let responce = cui::update(&mut cui_state, key_input);
+        let responce = cui_state.update(key_input);
         match responce {
             lib::CuiResponse::Quit => break,
             lib::CuiResponse::UserInput(key) => {
@@ -29,5 +29,5 @@ fn main_loop() {
         }
     }
 
-    cui::end()
+    CuiState::end();
 }
