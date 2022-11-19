@@ -20,19 +20,19 @@ fn main_loop(core_state: &mut CoreState) {
     let mut cui_state = CuiState::init();
 
     loop {
-        let mut key_responce = false;
-        let responce = cui_state.update(key_input, core_state);
-        match responce {
+        let mut key_response = false;
+        let response = cui_state.update(key_input, core_state);
+        match response {
             lib::CuiResponse::Quit => break,
             lib::CuiResponse::UserInput(key) => {
-                key_responce = true;
+                key_response = true;
                 key_input = key;
             }
             lib::CuiResponse::Shift(tab, index) => shift(core_state, tab, index),
         }
 
-        // `key_responce` takes care to pass the key_input to the next loop iteration
-        if !key_responce {
+        // `key_response` takes care to pass the key_input to the next loop iteration
+        if !key_response {
             key_input = None;
         }
     }
