@@ -5,6 +5,7 @@ pub struct CoreState {
     pub done_list: Vec<String>,
 }
 
+#[derive(Clone)]
 pub enum Tab {
     Todo,
     Done,
@@ -13,8 +14,8 @@ pub enum Tab {
 pub struct CuiState {
     pub curr_tab: Tab,
     pub win: pc::Window,
-    pub todo_curs: usize,
-    pub done_curs: usize,
+    pub todo_curs: Option<usize>,
+    pub done_curs: Option<usize>,
 }
 
 pub enum CuiResponse {

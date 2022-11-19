@@ -20,13 +20,20 @@ fn main_loop(core_state: &mut CoreState) {
     let mut cui_state = CuiState::init();
 
     loop {
+        let mut key_responce = false;
         let responce = cui_state.update(key_input, core_state);
         match responce {
             lib::CuiResponse::Quit => break,
             lib::CuiResponse::UserInput(key) => {
+                key_responce = true;
                 key_input = key;
             }
             lib::CuiResponse::Shift(tab, index) => shift(core_state, tab, index),
+        }
+
+        // `key_responce` takes care to pass the key_input to the next loop iteration
+        if !key_responce {
+            key_input = None;
         }
     }
 
@@ -34,5 +41,14 @@ fn main_loop(core_state: &mut CoreState) {
 }
 
 fn shift(core_state: &mut CoreState, tab: lib::Tab, index: usize) {
-    todo!()
+    match tab {
+        lib::Tab::Todo => {
+            let item = core_state.todo_list.remove(index);
+            core_state.done_list.push(item);
+        }
+        lib::Tab::Done => {
+            let item = core_state.done_list.remove(index);
+            core_state.todo_list.push(item);
+        }
+    }
 }
