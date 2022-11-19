@@ -10,15 +10,15 @@ pub enum Tab {
     Done,
 }
 
-pub struct CuiState<'a> {
+pub struct CuiState {
     pub curr_tab: Tab,
     pub win: pc::Window,
     pub todo_curs: usize,
     pub done_curs: usize,
-    pub core_state: &'a CoreState,
 }
 
 pub enum CuiResponse {
     Quit,
+    Shift(Tab, usize),
     UserInput(Option<pc::Input>),
 }

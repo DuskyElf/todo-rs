@@ -10,8 +10,8 @@ impl Tab {
     }
 }
 
-impl CuiState<'_> {
-    pub fn init(core_state: &CoreState) -> CuiState {
+impl CuiState {
+    pub fn init() -> CuiState {
         let win = pc::initscr();
         pc::curs_set(0);
         CuiState {
@@ -19,7 +19,6 @@ impl CuiState<'_> {
             curr_tab: Tab::Todo,
             todo_curs: 0,
             done_curs: 0,
-            core_state,
         }
     }
 
@@ -27,32 +26,31 @@ impl CuiState<'_> {
         pc::endwin();
     }
 
-    pub fn update(&mut self, key_input: Option<pc::Input>) -> CuiResponse {
+    pub fn update(&mut self, key_input: Option<pc::Input>, core_state: &CoreState) -> CuiResponse {
         if let Some(key) = key_input {
-            // `handle_input` returns false to exit the ui_loop
-            if !self.handle_input(key) {
-                return CuiResponse::Quit;
+            if let Some(response) = self.handle_input(key, core_state) {
+                return response;
             }
         }
 
-        self.render();
+        self.render(core_state);
 
         CuiResponse::UserInput(
             self.win.getch()
         )
     }
 
-    // Returns false to exit the ui_loop
-    fn handle_input(&mut self, key: pc::Input) -> bool {
+    fn handle_input(&mut self, key: pc::Input, core_state: &CoreState) -> Option<CuiResponse> {
         match key {
-            pc::Input::Character('q')  => return false,
+            pc::Input::Character('q')  => return Some(CuiResponse::Quit),
             pc::Input::Character('\t') => self.curr_tab.toggle(),
             pc::Input::Character('k')  => self.cursor_up(),
-            pc::Input::Character('j')  => self.cursor_down(),
+            pc::Input::Character('j')  => self.cursor_down(core_state),
+            pc::Input::Character('\n') => self.select(),
             _ => (),
         }
 
-        true
+        None
     }
 
     fn cursor_up(&mut self) {
@@ -65,19 +63,22 @@ impl CuiState<'_> {
         }
     }
 
-    fn cursor_down(&mut self) {
+    fn cursor_down(&mut self, core_state: &CoreState) {
         match self.curr_tab {
             Tab::Todo
-                if self.todo_curs < self.core_state.todo_list.len() - 1
+                if self.todo_curs < core_state.todo_list.len() - 1
                     => self.todo_curs += 1,
             Tab::Done
-                if self.todo_curs < self.core_state.done_list.len() - 1
+                if self.todo_curs < core_state.done_list.len() - 1
                     => self.todo_curs += 1,
             _ => (),
         }
     }
 
-    fn render(&self) {
+    fn select(&mut self) {
+    }
+
+    fn render(&self, core_state: &CoreState) {
         self.win.clear();
         self.win.printw("Simple Todo App:\n");
         self.win.printw("------------------\n");
@@ -85,11 +86,11 @@ impl CuiState<'_> {
         match self.curr_tab {
             Tab::Todo => {
                 self.win.printw("[ Todo ]  Done\n\n");
-                self.render_list(&self.core_state.todo_list, self.todo_curs);
+                self.render_list(&core_state.todo_list, self.todo_curs);
             }
             Tab::Done => {
                 self.win.printw("  Todo  [ Done ]\n\n");
-                self.render_list(&self.core_state.done_list, self.done_curs);
+                self.render_list(&core_state.done_list, self.done_curs);
             }
         }
 

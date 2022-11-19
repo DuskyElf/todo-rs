@@ -17,17 +17,22 @@ pub fn start() {
 
 fn main_loop(core_state: &mut CoreState) {
     let mut key_input = None;
-    let mut cui_state = CuiState::init(core_state);
+    let mut cui_state = CuiState::init();
 
     loop {
-        let responce = cui_state.update(key_input);
+        let responce = cui_state.update(key_input, core_state);
         match responce {
             lib::CuiResponse::Quit => break,
             lib::CuiResponse::UserInput(key) => {
                 key_input = key;
             }
+            lib::CuiResponse::Shift(tab, index) => shift(core_state, tab, index),
         }
     }
 
     cui_state.end();
+}
+
+fn shift(core_state: &mut CoreState, tab: lib::Tab, index: usize) {
+    todo!()
 }
