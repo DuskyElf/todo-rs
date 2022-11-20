@@ -1,6 +1,9 @@
 use pancurses as pc;
 use crate::{Tab, CuiResponse, CuiState, CoreState};
 
+const CUI_OFFSET_Y: i32 = 4;
+const CUI_OFFSET_X: i32 = 5;
+
 impl Tab {
     fn toggle(&mut self) {
         *self = match *self {
@@ -70,8 +73,10 @@ impl CuiState {
             }
             // pc::Input::Character('a')  => self.append(),
             pc::Input::Character('i')  => {
-                if let Some(new_string) = self.edit(core_state) {
-                    return Some(CuiResponse::Edit(new_string, self.todo_curs.unwrap()));
+                if let Tab::Todo = self.curr_tab {
+                    if let Some(new_string) = self.edit(core_state) {
+                        return Some(CuiResponse::Edit(new_string, self.todo_curs.unwrap()));
+                    }
                 }
             }
             _ => (),
@@ -123,16 +128,16 @@ impl CuiState {
     }
 
     fn edit(&mut self, core_state: &CoreState) -> Option<String> {
-        if let Tab::Done = self.curr_tab {
-            return None;
-        }
         let Some(todo_curs) = &mut self.todo_curs else {
             return None;
         };
 
         pc::curs_set(1);
         let mut buffer = core_state.todo_list[*todo_curs].clone();
-        self.win.mv(*todo_curs as i32 + 4, buffer.len() as i32 + 5);
+        self.win.mv(
+            *todo_curs as i32 + CUI_OFFSET_Y,
+            buffer.len() as i32 + CUI_OFFSET_X,
+        );
         loop {
             match self.win.getch().unwrap() {
                 pc::Input::Character('\n') => {
@@ -192,6 +197,7 @@ impl CuiState {
     }
 
     fn render(&self, core_state: &CoreState) {
+        assert_eq!(CUI_OFFSET_Y, 4);
         self.win.clear();
         self.win.printw("Simple Todo App:\n");
         self.win.printw("------------------\n");
@@ -215,6 +221,7 @@ impl CuiState {
             assert_eq!(list.len(), 0);
             return;
         };
+        assert_eq!(CUI_OFFSET_X, 5);
         for (i, element) in list.iter().enumerate() {
             if i == cursor {
                 self.win.printw(format!("-> | {element}\n"));
