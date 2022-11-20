@@ -27,9 +27,9 @@ $ cargo r --release
 - `Enter` `return` - Shift item to another tab `↵ `
 
 ## Features To Be Added
-- Quickly add your todo's
-- Save and load feature is in development.
-- Making the CUI  ✨Colorful✨
+- Adding new TODOs
+- Save and load TODOs
+- ✨Colorful✨ CUI
 
 ## Cargo Dependencies
 - Pancurses
