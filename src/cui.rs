@@ -13,7 +13,9 @@ impl Tab {
 impl CuiState {
     pub fn init() -> CuiState {
         let win = pc::initscr();
+        pc::noecho();
         pc::curs_set(0);
+        win.keypad(true);
         CuiState {
             win,
             curr_tab: Tab::Todo,
@@ -66,6 +68,12 @@ impl CuiState {
                     return Some(CuiResponse::Shift(self.curr_tab.clone(), index))
                 }
             }
+            // pc::Input::Character('a')  => self.append(),
+            pc::Input::Character('i')  => {
+                if let Some(new_string) = self.edit(core_state) {
+                    return Some(CuiResponse::Edit(new_string, self.todo_curs.unwrap()));
+                }
+            }
             _ => (),
         }
 
@@ -112,6 +120,45 @@ impl CuiState {
                 }
             }
         }
+    }
+
+    fn edit(&mut self, core_state: &CoreState) -> Option<String> {
+        if let Tab::Done = self.curr_tab {
+            return None;
+        }
+        let Some(todo_curs) = &mut self.todo_curs else {
+            return None;
+        };
+
+        pc::curs_set(1);
+        let mut buffer = core_state.todo_list[*todo_curs].clone();
+        self.win.mv(*todo_curs as i32 + 4, buffer.len() as i32 + 5);
+        loop {
+            match self.win.getch().unwrap() {
+                pc::Input::Character('\n') => {
+                    break;
+                }
+
+                pc::Input::KeyBackspace => {
+                    if buffer.len() != 0 {
+                        buffer.pop();
+                        self.win.mv(self.win.get_cur_y(), self.win.get_cur_x() - 1);
+                        self.win.delch();
+                    }
+                    continue;
+                }
+
+                pc::Input::Character(read) => {
+                    self.win.addch(read);
+                    buffer.push(read);
+                }
+
+                _ => (),
+            }
+        }
+
+        pc::curs_set(0);
+        Some(buffer)
     }
 
     fn handle_selection(&mut self) -> Option<usize> {
