@@ -14,6 +14,7 @@ $ cargo r --release
 
 ## Features
 - Simple CUI
+- Adding new TODOs
 - Mark TODOs complete, to shift to done list
 - Fullscreen mode
 - Lightweight
@@ -27,7 +28,6 @@ $ cargo r --release
 - `Enter` `return` - Shift item to another tab `↵ `
 
 ## Features To Be Added
-- Adding new TODOs
 - Save and load TODOs
 - ✨Colorful✨ CUI
 
