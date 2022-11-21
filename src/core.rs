@@ -30,6 +30,7 @@ fn main_loop(core_state: &mut CoreState) {
             }
             lib::CuiResponse::Shift(tab, index) => shift(core_state, tab, index),
             lib::CuiResponse::Edit(new_string, index) => edit(core_state, new_string, index),
+            lib::CuiResponse::AppendTodo(new_string) => append(core_state, new_string),
         }
 
         // `key_response` takes care to pass the key_input to the next loop iteration
@@ -56,4 +57,8 @@ fn shift(core_state: &mut CoreState, tab: lib::Tab, index: usize) {
 
 fn edit(core_state: &mut CoreState, new_string: String, index: usize) {
     core_state.todo_list[index] = new_string;
+}
+
+fn append(core_state: &mut CoreState, new_string: String) {
+    core_state.todo_list.push(new_string);
 }

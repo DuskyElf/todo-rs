@@ -21,6 +21,7 @@ pub struct CuiState {
 pub enum CuiResponse {
     Quit,
     Shift(Tab, usize),
+    AppendTodo(String),
     Edit(String, usize),
     UserInput(Option<pc::Input>),
 }

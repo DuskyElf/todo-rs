@@ -71,11 +71,17 @@ impl CuiState {
                     return Some(CuiResponse::Shift(self.curr_tab.clone(), index))
                 }
             }
-            // pc::Input::Character('a')  => self.append(),
             pc::Input::Character('i')  => {
                 if let Tab::Todo = self.curr_tab {
                     if let Some(new_string) = self.edit(core_state) {
                         return Some(CuiResponse::Edit(new_string, self.todo_curs.unwrap()));
+                    }
+                }
+            }
+            pc::Input::Character('a')  => {
+                if let Tab::Todo = self.curr_tab {
+                    if let Some(new_string) = self.append(core_state) {
+                        return Some(CuiResponse::AppendTodo(new_string));
                     }
                 }
             }
@@ -132,14 +138,32 @@ impl CuiState {
             return None;
         };
 
-        pc::curs_set(1);
         let mut buffer = core_state.todo_list[*todo_curs].clone();
         self.win.mv(
             *todo_curs as i32 + CUI_OFFSET_Y,
             buffer.len() as i32 + CUI_OFFSET_X,
         );
+        self.insert_mode(&mut buffer)?;
+        Some(buffer)
+    }
+
+    fn append(&mut self, core_state: &CoreState) -> Option<String> {
+        let mut buffer = String::new();
+        self.win.mv(
+            core_state.todo_list.len() as i32 + CUI_OFFSET_Y,
+            0,
+        );
+        self.win.printw("> ");
+        self.insert_mode(&mut buffer)?;
+        self.todo_curs = Some(core_state.todo_list.len());
+        Some(buffer)
+    }
+
+    fn insert_mode(&mut self, buffer: &mut String) -> Option<()> {
+        pc::curs_set(1);
         loop {
             match self.win.getch().unwrap() {
+                pc::Input::KeyExit => return None,
                 pc::Input::Character('\n') => {
                     break;
                 }
@@ -161,9 +185,8 @@ impl CuiState {
                 _ => (),
             }
         }
-
         pc::curs_set(0);
-        Some(buffer)
+        Some(())
     }
 
     fn handle_selection(&mut self) -> Option<usize> {
