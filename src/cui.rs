@@ -16,6 +16,9 @@ impl Tab {
 impl CuiState {
     pub fn init() -> CuiState {
         let win = pc::initscr();
+        if pc::has_colors() {
+            pc::start_color();
+        }
         pc::noecho();
         pc::curs_set(0);
         win.keypad(true);
