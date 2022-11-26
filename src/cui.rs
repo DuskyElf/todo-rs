@@ -4,6 +4,12 @@ use crate::{Tab, CuiResponse, CuiState, CoreState};
 const CUI_OFFSET_Y: i32 = 4;
 const CUI_OFFSET_X: i32 = 5;
 
+const TEXT_COLOR:       u32 = 1;
+const TITLE_COLOR:      u32 = 2;
+const SELECTED_COLOR:   u32 = 3;
+const INDICATOR_COLOR:  u32 = 4;
+const INSERTMODE_COLOR: u32 = 5;
+
 impl Tab {
     fn toggle(&mut self) {
         *self = match *self {
@@ -19,6 +25,14 @@ impl CuiState {
         if pc::has_colors() {
             pc::start_color();
         }
+
+        // COLORS
+        pc::init_pair(TEXT_COLOR as i16, pc::COLOR_WHITE, pc::COLOR_BLACK);
+        pc::init_pair(TITLE_COLOR as i16, pc::COLOR_BLUE, pc::COLOR_BLACK);
+        pc::init_pair(SELECTED_COLOR as i16, pc::COLOR_BLUE, pc::COLOR_BLACK);
+        pc::init_pair(INDICATOR_COLOR as i16, pc::COLOR_RED, pc::COLOR_BLACK);
+        pc::init_pair(INSERTMODE_COLOR as i16, pc::COLOR_GREEN, pc::COLOR_BLACK);
+
         pc::noecho();
         pc::curs_set(0);
         win.keypad(true);
@@ -164,6 +178,7 @@ impl CuiState {
 
     fn insert_mode(&mut self, buffer: &mut String) -> Option<()> {
         pc::curs_set(1);
+        self.win.attron(pc::COLOR_PAIR(INSERTMODE_COLOR));
         loop {
             match self.win.getch().unwrap() {
                 pc::Input::KeyExit => return None,
@@ -188,6 +203,7 @@ impl CuiState {
                 _ => (),
             }
         }
+        self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
         pc::curs_set(0);
         Some(())
     }
@@ -225,16 +241,41 @@ impl CuiState {
     fn render(&self, core_state: &CoreState) {
         assert_eq!(CUI_OFFSET_Y, 4);
         self.win.clear();
+        self.win.attron(pc::COLOR_PAIR(TITLE_COLOR) | pc::A_BOLD);
         self.win.printw("Simple Todo App:\n");
         self.win.printw("------------------\n");
+        self.win.attroff(pc::A_BOLD);
+        self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
 
         match self.curr_tab {
             Tab::Todo => {
-                self.win.printw("[ Todo ]  Done\n\n");
+                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
+                self.win.addch('[');
+
+                self.win.attron(pc::COLOR_PAIR(SELECTED_COLOR));
+                self.win.printw(" Todo ");
+
+                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
+                self.win.addch(']');
+                self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
+
+                self.win.printw("  Done\n\n");
                 self.render_list(&core_state.todo_list, self.todo_curs);
             }
             Tab::Done => {
-                self.win.printw("  Todo  [ Done ]\n\n");
+                self.win.printw("  Todo  ");
+
+                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
+                self.win.addch('[');
+
+                self.win.attron(pc::COLOR_PAIR(SELECTED_COLOR));
+                self.win.printw(" Done ");
+
+                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
+                self.win.addch(']');
+                self.win.printw("\n\n");
+                self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
+
                 self.render_list(&core_state.done_list, self.done_curs);
             }
         }
@@ -250,7 +291,11 @@ impl CuiState {
         assert_eq!(CUI_OFFSET_X, 5);
         for (i, element) in list.iter().enumerate() {
             if i == cursor {
-                self.win.printw(format!("-> | {element}\n"));
+                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
+                self.win.printw("-> | ");
+                self.win.attron(pc::COLOR_PAIR(SELECTED_COLOR));
+                self.win.printw(format!("{element}\n"));
+                self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
             }
             else {
                 self.win.printw(format!("  | {element}\n"));
