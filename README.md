@@ -10,7 +10,7 @@ $ cargo r --release
 ```
 
 ## Screenshots
-![App Screenshot](https://user-images.githubusercontent.com/91879372/202838995-443fdb19-190b-424d-960c-4787ddce4bfa.png)
+![App Screenshot](https://user-images.githubusercontent.com/91879372/204074472-1a53fdb7-f8d5-4ea5-9c6b-ce5740c22a51.png)
 
 ## Features
 - Simple CUI
