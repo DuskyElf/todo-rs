@@ -170,6 +170,7 @@ impl CuiState {
             core_state.todo_list.len() as i32 + CUI_OFFSET_Y,
             0,
         );
+        self.win.deleteln();
         self.win.printw("> ");
         self.insert_mode(&mut buffer)?;
         self.todo_curs = Some(core_state.todo_list.len());
@@ -260,7 +261,7 @@ impl CuiState {
                 self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
 
                 self.win.printw("  Done\n\n");
-                self.render_list(&core_state.todo_list, self.todo_curs);
+                self.render_list(Tab::Todo, &core_state.todo_list, self.todo_curs);
             }
             Tab::Done => {
                 self.win.printw("  Todo  ");
@@ -276,16 +277,22 @@ impl CuiState {
                 self.win.printw("\n\n");
                 self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
 
-                self.render_list(&core_state.done_list, self.done_curs);
+                self.render_list(Tab::Done, &core_state.done_list, self.done_curs);
             }
         }
 
         self.win.refresh();
     }
 
-    fn render_list(&self, list: &Vec<String>, cursor: Option<usize>) {
+    fn render_list(&self, curr_tab: Tab, list: &Vec<String>, cursor: Option<usize>) {
         let Some(cursor) = cursor else {
             assert_eq!(list.len(), 0);
+            self.win.attron(pc::COLOR_PAIR(INSERTMODE_COLOR));
+            match curr_tab {
+                Tab::Todo => { self.win.printw("There are no TODOs in here, press `a` to add one.\n"); }
+                Tab::Done => { self.win.printw("You have Done nothing, XD.\n"); }
+            }
+            self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
             return;
         };
         assert_eq!(CUI_OFFSET_X, 5);
