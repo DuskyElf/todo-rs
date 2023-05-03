@@ -1,14 +1,13 @@
-use pancurses as pc;
-use crate::{Tab, CuiResponse, CuiState, CoreState};
+use crate::{Tab, CuiResponse, CuiState, CoreState, wasm};
 
 const CUI_OFFSET_Y: i32 = 4;
 const CUI_OFFSET_X: i32 = 5;
 
-const TEXT_COLOR:       u32 = 1;
-const TITLE_COLOR:      u32 = 2;
-const SELECTED_COLOR:   u32 = 3;
-const INDICATOR_COLOR:  u32 = 4;
-const INSERTMODE_COLOR: u32 = 5;
+const TEXT_COLOR:       &str = "white";
+const TITLE_COLOR:      &str = "blue";
+const SELECTED_COLOR:   &str = "blue";
+const INDICATOR_COLOR:  &str = "red";
+const INSERTMODE_COLOR: &str = "green";
 
 impl Tab {
     fn toggle(&mut self) {
@@ -21,34 +20,17 @@ impl Tab {
 
 impl CuiState {
     pub fn init() -> CuiState {
-        let win = pc::initscr();
-        if pc::has_colors() {
-            pc::start_color();
-        }
+        let window = wasm::Window::new();
 
-        // COLORS
-        pc::init_pair(TEXT_COLOR as i16, pc::COLOR_WHITE, pc::COLOR_BLACK);
-        pc::init_pair(TITLE_COLOR as i16, pc::COLOR_BLUE, pc::COLOR_BLACK);
-        pc::init_pair(SELECTED_COLOR as i16, pc::COLOR_BLUE, pc::COLOR_BLACK);
-        pc::init_pair(INDICATOR_COLOR as i16, pc::COLOR_RED, pc::COLOR_BLACK);
-        pc::init_pair(INSERTMODE_COLOR as i16, pc::COLOR_GREEN, pc::COLOR_BLACK);
-
-        pc::noecho();
-        pc::curs_set(0);
-        win.keypad(true);
         CuiState {
-            win,
+            win: window,
             curr_tab: Tab::Todo,
             todo_curs: None,
             done_curs: None,
         }
     }
 
-    pub fn end(&self) {
-        pc::endwin();
-    }
-
-    pub fn update(&mut self, key_input: Option<pc::Input>, core_state: &CoreState) -> CuiResponse {
+    pub fn update(&mut self, key_input: Option<String>, core_state: &CoreState) -> CuiResponse {
         self.init_cursor(core_state);
 
         if let Some(key) = key_input {
@@ -60,7 +42,7 @@ impl CuiState {
         self.render(core_state);
 
         CuiResponse::UserInput(
-            self.win.getch()
+            self.win.get_ch()
         )
     }
 
@@ -77,32 +59,29 @@ impl CuiState {
         }
     }
 
-    fn handle_input(&mut self, key: pc::Input, core_state: &CoreState) -> Option<CuiResponse> {
-        match key {
-            pc::Input::Character('q')  => return Some(CuiResponse::Quit),
-            pc::Input::Character('\t') => self.curr_tab.toggle(),
-            pc::Input::Character('k')  => self.cursor_up(),
-            pc::Input::Character('j')  => self.cursor_down(core_state),
-            pc::Input::Character('\n') => {
-                if let Some(index) = self.handle_selection() {
-                    return Some(CuiResponse::Shift(self.curr_tab.clone(), index))
+    fn handle_input(&mut self, key: String, core_state: &CoreState) -> Option<CuiResponse> {
+        if key == "q" { return Some(CuiResponse::Quit); }
+        else if key == "\t" { self.curr_tab.toggle() }
+        else if key == "k" { self.cursor_up() }
+        else if key == "j" { self.cursor_down(core_state) }
+        else if key == "\n" {
+            if let Some(index) = self.handle_selection() {
+                return Some(CuiResponse::Shift(self.curr_tab.clone(), index))
+            }
+        }
+        else if key == "i" {
+            if let Tab::Todo = self.curr_tab {
+                if let Some(new_string) = self.edit(core_state) {
+                    return Some(CuiResponse::Edit(new_string, self.todo_curs.unwrap()));
                 }
             }
-            pc::Input::Character('i')  => {
-                if let Tab::Todo = self.curr_tab {
-                    if let Some(new_string) = self.edit(core_state) {
-                        return Some(CuiResponse::Edit(new_string, self.todo_curs.unwrap()));
-                    }
+        }
+        else if key == "a" {
+            if let Tab::Todo = self.curr_tab {
+                if let Some(new_string) = self.append(core_state) {
+                    return Some(CuiResponse::AppendTodo(new_string));
                 }
             }
-            pc::Input::Character('a')  => {
-                if let Tab::Todo = self.curr_tab {
-                    if let Some(new_string) = self.append(core_state) {
-                        return Some(CuiResponse::AppendTodo(new_string));
-                    }
-                }
-            }
-            _ => (),
         }
 
         None
@@ -177,34 +156,34 @@ impl CuiState {
     }
 
     fn insert_mode(&mut self, buffer: &mut String) -> Option<()> {
-        pc::curs_set(1);
-        self.win.attron(pc::COLOR_PAIR(INSERTMODE_COLOR));
+        self.win.set_color(INSERTMODE_COLOR);
         loop {
-            match self.win.getch().unwrap() {
-                pc::Input::KeyExit => return None,
-                pc::Input::Character('\n') => {
-                    break;
+            let input = self.win.get_ch();
+            if input == "Escape" { return None }
+            else if input == "\n" { break; }
+            else if input == "Backspace" {
+                if buffer.len() != 0 {
+                    buffer.pop();
+                    self.win.mv(self.win.get_cur_y(), self.win.get_cur_x() - 1);
+                    self.win.delch();
                 }
-
-                pc::Input::KeyBackspace => {
-                    if buffer.len() != 0 {
-                        buffer.pop();
-                        self.win.mv(self.win.get_cur_y(), self.win.get_cur_x() - 1);
-                        self.win.delch();
-                    }
-                    continue;
+                continue;
+            }
+            let input = self.win.get_ch();
+            if input == "Backspace" {
+                if buffer.len() != 0 {
+                    buffer.pop();
+                    self.win.mv(self.win.get_cur_y(), self.win.get_cur_x() - 1);
+                    self.win.delch();
                 }
-
-                pc::Input::Character(read) => {
-                    self.win.addch(read);
-                    buffer.push(read);
-                }
-
-                _ => (),
+                continue;
+            }
+            else if input.len() == 1 {
+                self.win.add_str(&input);
+                buffer.push_str(&input);
             }
         }
-        self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
-        pc::curs_set(0);
+        self.win.set_color(TEXT_COLOR);
         Some(())
     }
 
@@ -238,26 +217,25 @@ impl CuiState {
         }
     }
 
-    fn render(&self, core_state: &CoreState) {
+    fn render(&mut self, core_state: &CoreState) {
         assert_eq!(CUI_OFFSET_Y, 4);
         self.win.clear();
-        self.win.attron(pc::COLOR_PAIR(TITLE_COLOR) | pc::A_BOLD);
+        self.win.set_color(TITLE_COLOR);
         self.win.printw("Simple Todo App:\n");
         self.win.printw("------------------\n");
-        self.win.attroff(pc::A_BOLD);
-        self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
+        self.win.set_color(TEXT_COLOR);
 
         match self.curr_tab {
             Tab::Todo => {
-                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
-                self.win.addch('[');
+                self.win.set_color(INDICATOR_COLOR);
+                self.win.add_str("[");
 
-                self.win.attron(pc::COLOR_PAIR(SELECTED_COLOR));
+                self.win.set_color(SELECTED_COLOR);
                 self.win.printw(" Todo ");
 
-                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
-                self.win.addch(']');
-                self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
+                self.win.set_color(INDICATOR_COLOR);
+                self.win.add_str("]");
+                self.win.set_color(TEXT_COLOR);
 
                 self.win.printw("  Done\n\n");
                 self.render_list(&core_state.todo_list, self.todo_curs);
@@ -265,16 +243,16 @@ impl CuiState {
             Tab::Done => {
                 self.win.printw("  Todo  ");
 
-                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
-                self.win.addch('[');
+                self.win.set_color(INDICATOR_COLOR);
+                self.win.add_str("[");
 
-                self.win.attron(pc::COLOR_PAIR(SELECTED_COLOR));
+                self.win.set_color(SELECTED_COLOR);
                 self.win.printw(" Done ");
 
-                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
-                self.win.addch(']');
+                self.win.set_color(INDICATOR_COLOR);
+                self.win.add_str("]");
                 self.win.printw("\n\n");
-                self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
+                self.win.set_color(TEXT_COLOR);
 
                 self.render_list(&core_state.done_list, self.done_curs);
             }
@@ -283,7 +261,7 @@ impl CuiState {
         self.win.refresh();
     }
 
-    fn render_list(&self, list: &Vec<String>, cursor: Option<usize>) {
+    fn render_list(&mut self, list: &Vec<String>, cursor: Option<usize>) {
         let Some(cursor) = cursor else {
             assert_eq!(list.len(), 0);
             return;
@@ -291,14 +269,14 @@ impl CuiState {
         assert_eq!(CUI_OFFSET_X, 5);
         for (i, element) in list.iter().enumerate() {
             if i == cursor {
-                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
+                self.win.set_color(INDICATOR_COLOR);
                 self.win.printw("-> | ");
-                self.win.attron(pc::COLOR_PAIR(SELECTED_COLOR));
-                self.win.printw(format!("{element}\n"));
-                self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
+                self.win.set_color(SELECTED_COLOR);
+                self.win.printw(&format!("{element}\n"));
+                self.win.set_color(TEXT_COLOR);
             }
             else {
-                self.win.printw(format!("  | {element}\n"));
+                self.win.printw(&format!("  | {element}\n"));
             }
         }
     }

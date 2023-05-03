@@ -1,5 +1,4 @@
-use pancurses as pc;
-
+use crate::wasm;
 pub struct CoreState {
     pub todo_list: Vec<String>,
     pub done_list: Vec<String>,
@@ -13,7 +12,7 @@ pub enum Tab {
 
 pub struct CuiState {
     pub curr_tab: Tab,
-    pub win: pc::Window,
+    pub win: wasm::Window,
     pub todo_curs: Option<usize>,
     pub done_curs: Option<usize>,
 }
@@ -23,5 +22,5 @@ pub enum CuiResponse {
     Shift(Tab, usize),
     AppendTodo(String),
     Edit(String, usize),
-    UserInput(Option<pc::Input>),
+    UserInput(String),
 }

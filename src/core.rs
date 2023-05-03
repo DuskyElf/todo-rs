@@ -21,12 +21,12 @@ fn main_loop(core_state: &mut CoreState) {
 
     loop {
         let mut key_response = false;
-        let response = cui_state.update(key_input, core_state);
+        let response = cui_state.update(key_input.clone(), core_state);
         match response {
             lib::CuiResponse::Quit => break,
             lib::CuiResponse::UserInput(key) => {
                 key_response = true;
-                key_input = key;
+                key_input = Some(key);
             }
             lib::CuiResponse::Shift(tab, index) => shift(core_state, tab, index),
             lib::CuiResponse::Edit(new_string, index) => edit(core_state, new_string, index),
@@ -38,8 +38,6 @@ fn main_loop(core_state: &mut CoreState) {
             key_input = None;
         }
     }
-
-    cui_state.end();
 }
 
 fn shift(core_state: &mut CoreState, tab: lib::Tab, index: usize) {
