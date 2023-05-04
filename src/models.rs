@@ -5,7 +5,7 @@ pub struct CoreState {
     pub done_list: Vec<String>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum Tab {
     Todo,
     Done,
@@ -22,6 +22,7 @@ pub enum CuiResponse {
     Quit,
     Shift(Tab, usize),
     AppendTodo(String),
+    Delete(Tab, usize),
     Edit(String, usize),
     UserInput(Option<pc::Input>),
 }

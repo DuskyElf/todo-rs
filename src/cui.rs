@@ -102,6 +102,16 @@ impl CuiState {
                     }
                 }
             }
+            pc::Input::Character('d')  => {
+                let cursor = match self.curr_tab {
+                    Tab::Todo => self.todo_curs,
+                    Tab::Done => self.done_curs,
+                };
+                if let Some(cursor) = cursor {
+                    self.delete();
+                    return Some(CuiResponse::Delete(self.curr_tab, cursor));
+                }
+            }
             _ => (),
         }
 
@@ -175,6 +185,32 @@ impl CuiState {
         self.insert_mode(&mut buffer)?;
         self.todo_curs = Some(core_state.todo_list.len());
         Some(buffer)
+    }
+
+    fn delete(&mut self) {
+        match self.curr_tab {
+            Tab::Todo => {
+                let Some(todo_curs) = &mut self.todo_curs else {
+                    return;
+                };
+                if *todo_curs > 0 {
+                    *todo_curs -= 1;
+                } else {
+                    self.todo_curs = None;
+                }
+            }
+
+            Tab::Done => {
+                let Some(done_curs) = &mut self.done_curs else {
+                    return;
+                };
+                if *done_curs > 0 {
+                    *done_curs -= 1;
+                } else {
+                    self.done_curs = None;
+                }
+            }
+        }
     }
 
     fn insert_mode(&mut self, buffer: &mut String) -> Option<()> {

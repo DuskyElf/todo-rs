@@ -22,10 +22,12 @@ $ cargo r --release
 ## Quick Guide
 ### Keybinds
 - `q` - Quit  `X`
-- `Tab` - Toggle between tabs  `⇆ `
+- `Tab` - Toggle between tabs  `⇆`
 - `k` - Move up in list `↑` 
-- `j` - Move down in list `↓ `
-- `Enter` `return` - Shift item to another tab `↵ `
+- `j` - Move down in list `↓`
+- `a` - Add a new Todo
+- `d` - Delete the selected element
+- `Enter` `return` - Shift item to another tab `↵`
 
 ## Features To Be Added
 - Save and load TODOs
