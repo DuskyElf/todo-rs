@@ -25,7 +25,7 @@ $ cargo r --release
 - `Tab` - Toggle between tabs  `⇆`
 - `k` - Move up in list `↑` 
 - `j` - Move down in list `↓`
-- `i` - Edit the selected todo
+- `i` - Edit the selected Todo
 - `a` - Add a new Todo
 - `d` - Delete the selected element
 - `u` - Undo last task (tasks includes `edit`, `append`, `delete` and `shift`)
