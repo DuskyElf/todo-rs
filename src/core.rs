@@ -1,4 +1,7 @@
-use crate::{self as lib, CoreState, CuiState};
+use crate::*;
+
+use Tab::*;
+use Task::*;
 
 pub fn start() {
     let mut core_state = CoreState {
@@ -23,17 +26,18 @@ fn main_loop(core_state: &mut CoreState) {
     loop {
         let mut key_response = false;
         let response = cui_state.update(key_input, core_state);
+        use CuiResponse::*;
         match response {
-            lib::CuiResponse::Quit => break,
-            lib::CuiResponse::Undo => undo(core_state),
-            lib::CuiResponse::UserInput(key) => {
+            Quit => break,
+            Undo => core_state.undo(),
+            UserInput(key) => {
                 key_response = true;
                 key_input = key;
             }
-            lib::CuiResponse::Shift(tab, index) => shift(core_state, tab, index),
-            lib::CuiResponse::Edit(new_string, index) => edit(core_state, new_string, index),
-            lib::CuiResponse::AppendTodo(new_string) => append(core_state, new_string),
-            lib::CuiResponse::Delete(tab, index) => delete(core_state, tab, index),
+            Shift(tab, index) => core_state.shift(tab, index),
+            Edit(new_string, index) => core_state.edit(new_string, index),
+            AppendTodo(new_string) => core_state.append(new_string),
+            Delete(tab, index) => core_state.delete(tab, index),
         }
 
         // `key_response` takes care to pass the key_input to the next loop iteration
@@ -45,89 +49,91 @@ fn main_loop(core_state: &mut CoreState) {
     cui_state.end();
 }
 
-fn undo(core_state: &mut CoreState) {
-    let Some(last_task) = core_state.task_list.pop() else {
-        return;
-    };
-    match last_task {
-        lib::Task::Edit(last_str, index) => core_state.todo_list[index] = last_str,
-        lib::Task::Append(index) => _ = core_state.todo_list.remove(index),
-        lib::Task::Shift(last_tab, last_index, index) => {
-            match last_tab {
-                lib::Tab::Todo => {
-                    let element = core_state.done_list.remove(index);
-                    core_state.todo_list.insert(last_index, element);
-                },
-                lib::Tab::Done => {
-                    let element = core_state.todo_list.remove(index);
-                    core_state.done_list.insert(last_index, element);
-                },
+impl CoreState {
+    fn undo(&mut self) {
+        let Some(last_task) = self.task_list.pop() else {
+            return;
+        };
+        match last_task {
+            Edit(last_str, index) => self.todo_list[index] = last_str,
+            Append(index) => _ = self.todo_list.remove(index),
+            Shift(last_tab, last_index, index) => {
+                match last_tab {
+                    Todo => {
+                        let element = self.done_list.remove(index);
+                        self.todo_list.insert(last_index, element);
+                    },
+                    Done => {
+                        let element = self.todo_list.remove(index);
+                        self.done_list.insert(last_index, element);
+                    },
+                }
             }
-        }
-        lib::Task::Delete(tab, last_str, index) => {
-            match tab {
-                lib::Tab::Todo => core_state.todo_list.insert(index, last_str),
-                lib::Tab::Done => core_state.done_list.insert(index, last_str),
+            Delete(tab, last_str, index) => {
+                match tab {
+                    Todo => self.todo_list.insert(index, last_str),
+                    Done => self.done_list.insert(index, last_str),
+                }
             }
         }
     }
-}
 
-fn shift(core_state: &mut CoreState, tab: lib::Tab, index: usize) {
-    match tab {
-        lib::Tab::Todo => {
-            core_state.task_list.push(lib::Task::Shift(
-                tab,
-                index,
-                core_state.done_list.len()
-            ));
-            let item = core_state.todo_list.remove(index);
-            core_state.done_list.push(item);
-        }
-        lib::Tab::Done => {
-            core_state.task_list.push(lib::Task::Shift(
-                tab,
-                index,
-                core_state.todo_list.len()
-            ));
-            let item = core_state.done_list.remove(index);
-            core_state.todo_list.push(item);
+    fn shift(&mut self, tab: Tab, index: usize) {
+        match tab {
+            Todo => {
+                self.task_list.push(Task::Shift(
+                    tab,
+                    index,
+                    self.done_list.len()
+                ));
+                let item = self.todo_list.remove(index);
+                self.done_list.push(item);
+            }
+            Done => {
+                self.task_list.push(Task::Shift(
+                    tab,
+                    index,
+                    self.todo_list.len()
+                ));
+                let item = self.done_list.remove(index);
+                self.todo_list.push(item);
+            }
         }
     }
-}
 
-fn edit(core_state: &mut CoreState, new_string: String, index: usize) {
-    core_state.task_list.push(lib::Task::Edit(
-        core_state.todo_list[index].clone(),
-        index
-    ));
-    core_state.todo_list[index] = new_string;
-}
+    fn edit(&mut self, new_string: String, index: usize) {
+        self.task_list.push(Task::Edit(
+            self.todo_list[index].clone(),
+            index
+        ));
+        self.todo_list[index] = new_string;
+    }
 
-fn append(core_state: &mut CoreState, new_string: String) {
-    core_state.task_list.push(lib::Task::Append(
-        core_state.todo_list.len()
-    ));
-    core_state.todo_list.push(new_string);
-}
+    fn append(&mut self, new_string: String) {
+        self.task_list.push(Task::Append(
+            self.todo_list.len()
+        ));
+        self.todo_list.push(new_string);
+    }
 
-fn delete(core_state: &mut CoreState, tab: lib::Tab, index: usize) {
-    match tab {
-        lib::Tab::Todo => {
-            core_state.task_list.push(lib::Task::Delete(
-                tab,
-                core_state.todo_list[index].clone(),
-                index
-            ));
-            core_state.todo_list.remove(index);
-        }
-        lib::Tab::Done => {
-            core_state.task_list.push(lib::Task::Delete(
-                tab,
-                core_state.done_list[index].clone(),
-                index
-            ));
-            core_state.done_list.remove(index);
+    fn delete(&mut self, tab: Tab, index: usize) {
+        match tab {
+            Todo => {
+                self.task_list.push(Task::Delete(
+                    tab,
+                    self.todo_list[index].clone(),
+                    index
+                ));
+                self.todo_list.remove(index);
+            }
+            Done => {
+                self.task_list.push(Task::Delete(
+                    tab,
+                    self.done_list[index].clone(),
+                    index
+                ));
+                self.done_list.remove(index);
+            }
         }
     }
 }

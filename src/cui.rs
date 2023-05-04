@@ -1,6 +1,9 @@
 use crate::*;
 use pancurses as pc;
 
+use Tab::*;
+use Task::*;
+
 const CUI_OFFSET_Y: i32 = 4;
 const CUI_OFFSET_X: i32 = 5;
 
@@ -13,8 +16,8 @@ const INSERTMODE_COLOR: u32 = 5;
 impl Tab {
     fn toggle(&mut self) {
         *self = match *self {
-            Self::Todo => Self::Done,
-            Self::Done => Self::Todo,
+            Todo => Done,
+            Done => Todo,
         }
     }
 }
@@ -38,7 +41,7 @@ impl CuiState {
         win.keypad(true);
         CuiState {
             win,
-            curr_tab: Tab::Todo,
+            curr_tab: Todo,
             todo_curs: None,
             done_curs: None,
         }
@@ -78,35 +81,36 @@ impl CuiState {
     }
 
     fn handle_input(&mut self, key: pc::Input, core_state: &CoreState) -> Option<CuiResponse> {
+        use pc::Input::*;
         match key {
-            pc::Input::Character('q')  => return Some(CuiResponse::Quit),
-            pc::Input::Character('u')  => return self.undo(core_state),
-            pc::Input::Character('\t') => self.curr_tab.toggle(),
-            pc::Input::Character('k')  => self.cursor_up(),
-            pc::Input::Character('j')  => self.cursor_down(core_state),
-            pc::Input::Character('\n') => {
+            Character('q')  => return Some(CuiResponse::Quit),
+            Character('u')  => return self.undo(core_state),
+            Character('\t') => self.curr_tab.toggle(),
+            Character('k')  => self.cursor_up(),
+            Character('j')  => self.cursor_down(core_state),
+            Character('\n') => {
                 if let Some(index) = self.handle_selection() {
                     return Some(CuiResponse::Shift(self.curr_tab.clone(), index))
                 }
             }
-            pc::Input::Character('i')  => {
-                if let Tab::Todo = self.curr_tab {
+            Character('i')  => {
+                if let Todo = self.curr_tab {
                     if let Some(new_string) = self.edit(core_state) {
                         return Some(CuiResponse::Edit(new_string, self.todo_curs.unwrap()));
                     }
                 }
             }
-            pc::Input::Character('a')  => {
-                if let Tab::Todo = self.curr_tab {
+            Character('a')  => {
+                if let Todo = self.curr_tab {
                     if let Some(new_string) = self.append(core_state) {
                         return Some(CuiResponse::AppendTodo(new_string));
                     }
                 }
             }
-            pc::Input::Character('d')  => {
+            Character('d')  => {
                 let cursor = match self.curr_tab {
-                    Tab::Todo => self.todo_curs,
-                    Tab::Done => self.done_curs,
+                    Todo => self.todo_curs,
+                    Done => self.done_curs,
                 };
                 if let Some(cursor) = cursor {
                     self.delete();
@@ -124,26 +128,26 @@ impl CuiState {
             return None;
         };
         match last_task {
-            Task::Edit(_, index) => self.todo_curs = Some(*index),
-            Task::Append(index) => if self.todo_curs == Some(*index) {
+            Edit(_, index) => self.todo_curs = Some(*index),
+            Append(index) => if self.todo_curs == Some(*index) {
                 if *index > 0 {
                     self.todo_curs = Some(index - 1);
                 } else {
                     self.todo_curs = None;
                 }
             }
-            Task::Shift(last_tab, last_index, _) => {
+            Shift(last_tab, last_index, _) => {
                 self.curr_tab = *last_tab;
                 match self.curr_tab {
-                    Tab::Todo => self.todo_curs = Some(*last_index),
-                    Tab::Done => self.done_curs = Some(*last_index),
+                    Todo => self.todo_curs = Some(*last_index),
+                    Done => self.done_curs = Some(*last_index),
                 }
             }
-            Task::Delete(tab, _, index) => {
+            Delete(tab, _, index) => {
                 self.curr_tab = *tab;
                 match self.curr_tab {
-                    Tab::Todo => self.todo_curs = Some(*index),
-                    Tab::Done => self.done_curs = Some(*index),
+                    Todo => self.todo_curs = Some(*index),
+                    Done => self.done_curs = Some(*index),
                 }
             }
         }
@@ -152,7 +156,7 @@ impl CuiState {
 
     fn cursor_up(&mut self) {
         match self.curr_tab {
-            Tab::Todo => {
+            Todo => {
                 let Some(todo_curs) = &mut self.todo_curs else {
                     return;
                 };
@@ -160,7 +164,7 @@ impl CuiState {
                     *todo_curs -= 1;
                 }
             }
-            Tab::Done => {
+            Done => {
                 let Some(done_curs) = &mut self.done_curs else {
                     return;
                 };
@@ -173,7 +177,7 @@ impl CuiState {
 
     fn cursor_down(&mut self, core_state: &CoreState) {
         match self.curr_tab {
-            Tab::Todo => {
+            Todo => {
                 let Some(todo_curs) = &mut self.todo_curs else {
                     return;
                 };
@@ -181,7 +185,7 @@ impl CuiState {
                     *todo_curs += 1;
                 }
             }
-            Tab::Done => {
+            Done => {
                 let Some(done_curs) = &mut self.done_curs else {
                     return;
                 };
@@ -221,7 +225,7 @@ impl CuiState {
 
     fn delete(&mut self) {
         match self.curr_tab {
-            Tab::Todo => {
+            Todo => {
                 let Some(todo_curs) = &mut self.todo_curs else {
                     return;
                 };
@@ -232,7 +236,7 @@ impl CuiState {
                 }
             }
 
-            Tab::Done => {
+            Done => {
                 let Some(done_curs) = &mut self.done_curs else {
                     return;
                 };
@@ -279,7 +283,7 @@ impl CuiState {
 
     fn handle_selection(&mut self) -> Option<usize> {
         match self.curr_tab {
-            Tab::Todo => {
+            Todo => {
                 let Some(todo_curs) = &mut self.todo_curs else {
                     return None;
                 };
@@ -292,7 +296,7 @@ impl CuiState {
                 return Some(index);
             }
 
-            Tab::Done => {
+            Done => {
                 let Some(done_curs) = &mut self.done_curs else {
                     return None;
                 };
@@ -317,7 +321,7 @@ impl CuiState {
         self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
 
         match self.curr_tab {
-            Tab::Todo => {
+            Todo => {
                 self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
                 self.win.addch('[');
 
@@ -329,9 +333,9 @@ impl CuiState {
                 self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
 
                 self.win.printw("  Done\n\n");
-                self.render_list(Tab::Todo, &core_state.todo_list, self.todo_curs);
+                self.render_list(Todo, &core_state.todo_list, self.todo_curs);
             }
-            Tab::Done => {
+            Done => {
                 self.win.printw("  Todo  ");
 
                 self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
@@ -345,7 +349,7 @@ impl CuiState {
                 self.win.printw("\n\n");
                 self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
 
-                self.render_list(Tab::Done, &core_state.done_list, self.done_curs);
+                self.render_list(Done, &core_state.done_list, self.done_curs);
             }
         }
 
@@ -357,9 +361,9 @@ impl CuiState {
             assert_eq!(list.len(), 0);
             self.win.attron(pc::COLOR_PAIR(INSERTMODE_COLOR));
             match curr_tab {
-                Tab::Todo => { self.win.printw("There are no TODOs in here, press `a` to add one.\n"); }
-                Tab::Done => { self.win.printw("You have Done nothing, XD.\n"); }
-            }
+                Todo => self.win.printw("There are no TODOs in here, press `a` to add one.\n"),
+                Done => self.win.printw("You have Done nothing, XD.\n"),
+            };
             self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
             return;
         };
