@@ -28,7 +28,7 @@ $ cargo r --release
 - `i` - Edit the selected todo
 - `a` - Add a new Todo
 - `d` - Delete the selected element
-- `u` - Undo last task (tasks includes `i`, `a`, and `d`)
+- `u` - Undo last task (tasks includes `edit`, `append`, `delete` and `shift`)
 - `Enter` `return` - Shift item to another tab `↵`
 
 ## Features To Be Added
