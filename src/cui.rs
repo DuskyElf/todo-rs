@@ -1,5 +1,5 @@
+use crate::*;
 use pancurses as pc;
-use crate::{Tab, CuiResponse, CuiState, CoreState};
 
 const CUI_OFFSET_Y: i32 = 4;
 const CUI_OFFSET_X: i32 = 5;
@@ -80,6 +80,7 @@ impl CuiState {
     fn handle_input(&mut self, key: pc::Input, core_state: &CoreState) -> Option<CuiResponse> {
         match key {
             pc::Input::Character('q')  => return Some(CuiResponse::Quit),
+            pc::Input::Character('u')  => return self.undo(core_state),
             pc::Input::Character('\t') => self.curr_tab.toggle(),
             pc::Input::Character('k')  => self.cursor_up(),
             pc::Input::Character('j')  => self.cursor_down(core_state),
@@ -116,6 +117,37 @@ impl CuiState {
         }
 
         None
+    }
+
+    fn undo(&mut self, core_state: &CoreState) -> Option<CuiResponse> {
+        let Some(last_task) = core_state.task_list.last() else {
+            return None;
+        };
+        match last_task {
+            Task::Edit(_, index) => self.todo_curs = Some(*index),
+            Task::Append(index) => if self.todo_curs == Some(*index) {
+                if *index > 0 {
+                    self.todo_curs = Some(index - 1);
+                } else {
+                    self.todo_curs = None;
+                }
+            }
+            Task::Shift(last_tab, last_index, _) => {
+                self.curr_tab = *last_tab;
+                match self.curr_tab {
+                    Tab::Todo => self.todo_curs = Some(*last_index),
+                    Tab::Done => self.done_curs = Some(*last_index),
+                }
+            }
+            Task::Delete(tab, _, index) => {
+                self.curr_tab = *tab;
+                match self.curr_tab {
+                    Tab::Todo => self.todo_curs = Some(*index),
+                    Tab::Done => self.done_curs = Some(*index),
+                }
+            }
+        }
+        return Some(CuiResponse::Undo)
     }
 
     fn cursor_up(&mut self) {
