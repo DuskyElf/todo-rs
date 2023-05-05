@@ -125,8 +125,12 @@ impl CuiState {
             return None;
         };
         match last_task {
-            Edit(_, index) => self.todo_curs = Some(*index),
+            Edit(_, index) => {
+                self.curr_tab = Todo;
+                self.todo_curs = Some(*index);
+            }
             Append(index) => if self.todo_curs == Some(*index) {
+                self.curr_tab = Todo;
                 if *index > 0 {
                     self.todo_curs = Some(index - 1);
                 } else {
