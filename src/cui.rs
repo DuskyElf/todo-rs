@@ -1,9 +1,6 @@
 use crate::*;
 use pancurses as pc;
 
-use Tab::*;
-use Task::*;
-
 const CUI_OFFSET_Y: i32 = 4;
 const CUI_OFFSET_X: i32 = 5;
 
