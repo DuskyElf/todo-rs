@@ -1,4 +1,5 @@
 use pancurses as pc;
+use serde::{Deserialize, Serialize};
 
 pub enum Task {
     Append(usize),
@@ -17,6 +18,12 @@ pub struct CoreState {
 pub enum Tab {
     Todo,
     Done,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SavedData {
+    pub todo_list: Vec<String>,
+    pub done_list: Vec<String>,
 }
 
 pub struct CuiState {

@@ -1,3 +1,9 @@
+use std::fs::{self, DirBuilder};
+use std::process::exit;
+
+use serde_json;
+use directories as d;
+
 use Tab::*;
 use Task::*;
 
@@ -6,19 +12,61 @@ pub mod cui;
 pub use models::*;
 
 pub fn main() {
-    let mut core_state = CoreState {
-        task_list: vec![],
-        todo_list: vec![
-            "Make a cup of tea".to_owned(),
-            "Buy some bread".to_owned(),
-            "Improve todo-rs project".to_owned(),
-        ],
-        done_list: vec![
-            "Stay happy".to_owned(),
-        ],
+    let mut core_state = init_state();
+    main_loop(&mut core_state);
+    save_state(core_state);
+}
+
+fn init_state() -> CoreState {
+    let Some(proj_dirs) = d::ProjectDirs::from("me", "DuskyElf", "todo-rs") else {
+        eprintln!("Error: Alien Operating System?");
+        exit(1);
     };
 
-    main_loop(&mut core_state);
+    let data_file_path = proj_dirs.data_dir().join("data_file.json");
+    
+    let data = fs::read_to_string(data_file_path);
+    let Ok(data) = data else {
+        return CoreState {
+            task_list: Vec::new(),
+            todo_list: Vec::new(),
+            done_list: Vec::new(),
+        }
+    };
+    
+    let Ok(saved_data) = serde_json::from_str::<SavedData>(&data) else {
+        eprintln!("Error: Currepted data_file.");
+        exit(1);
+    };
+    
+    CoreState {
+        task_list: Vec::new(),
+        todo_list: saved_data.todo_list,
+        done_list: saved_data.done_list,
+    }
+}
+
+fn save_state(core_state: CoreState) {
+    let Some(proj_dirs) = d::ProjectDirs::from("me", "DuskyElf", "todo-rs") else {
+        eprintln!("Error: Alien Operating System?");
+        exit(1);
+    };
+
+    DirBuilder::new()
+        .recursive(true)
+        .create(proj_dirs.data_dir()).unwrap();
+
+    let data_file_path = proj_dirs.data_dir().join("data_file.json");
+
+    let data_to_be_saved = SavedData {
+        todo_list: core_state.todo_list,
+        done_list: core_state.done_list,
+    };
+    let data_to_be_saved = serde_json::to_string_pretty(&data_to_be_saved).unwrap();
+    
+    fs::write(data_file_path, data_to_be_saved).unwrap_or_else(|err|
+        eprintln!("Error: Can't save the data due to {err}")
+    );
 }
 
 fn main_loop(core_state: &mut CoreState) {
