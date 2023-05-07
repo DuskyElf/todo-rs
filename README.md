@@ -34,9 +34,5 @@ $ cargo r --release
 - `u` - Undo last task (tasks includes `edit`, `append`, `delete` and `shift`)
 - `Enter` `return` - Shift item to another tab `↵`
 
-## Features To Be Added
-- Save and load TODOs
-- ✨Colorful✨ CUI
-
 ## Cargo Dependencies
 - Pancurses
