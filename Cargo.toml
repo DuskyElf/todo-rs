@@ -1,5 +1,5 @@
 [package]
-name = "todo-rs"
+name = "de-todo"
 version = "0.1.0"
 authors = ["DuskyElf"]
 description = "A simple CUI todo app in Rust "
