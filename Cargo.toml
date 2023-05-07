@@ -1,6 +1,15 @@
 [package]
 name = "todo-rs"
 version = "0.1.0"
+authors = ["DuskyElf"]
+description = "A simple CUI todo app in Rust "
+readme = "README.md"
+repository = "https://github.com/DuskyElf/todo-rs/"
+homepage = "https://github.com/DuskyElf/todo-rs/"
+licence = "MIT"
+licence-file = "LICENCE"
+keywords = ["cui-tool", "curses-ui", "todo-app", "DuskyElf"]
+categories = ["command-line-utilities"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
