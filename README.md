@@ -3,6 +3,11 @@ A simple lightweight CUI todo app in Rust.
 
 ## Quick Start
 Note:- Rust tool-chain should be installed on your machine.
+### Installation via cargo install
+```shell
+$ cargo install de-todo
+```
+### Cloning with git and compiling
 ```shell
 $ git clone https://github.com/DuskyElf/todo-rs.git
 $ cd todo-rs
