@@ -14,10 +14,13 @@ $ cargo r --release
 
 ## Features
 - Simple CUI
-- Adding new TODOs
+- Add new TODOs
 - Mark TODOs complete, to shift to done list
+- Edit TODOs
+- Delete TODOs
+- Undo last changes
+- Auto Save and load Todo and Done list on quit and restart
 - Fullscreen mode
-- Lightweight
 
 ## Quick Guide
 ### Keybinds
