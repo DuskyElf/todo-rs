@@ -35,4 +35,7 @@ $ cargo r --release
 - `Enter` `return` - Shift item to another tab `↵`
 
 ## Cargo Dependencies
-- Pancurses
+- pancurses
+- directories
+- serde
+- serde_json
