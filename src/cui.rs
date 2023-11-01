@@ -252,7 +252,7 @@ impl CuiState {
 
     fn insert_mode(&mut self, buffer: &mut String) -> Option<()> {
         pc::curs_set(1);
-        self.win.attron(pc::COLOR_PAIR(INSERTMODE_COLOR));
+        self.win.attron(pc::COLOR_PAIR(INSERTMODE_COLOR.into()));
         loop {
             match self.win.getch().unwrap() {
                 pc::Input::KeyExit => return None,
@@ -277,7 +277,7 @@ impl CuiState {
                 _ => (),
             }
         }
-        self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
+        self.win.attron(pc::COLOR_PAIR(TEXT_COLOR.into()));
         pc::curs_set(0);
         Some(())
     }
@@ -315,23 +315,23 @@ impl CuiState {
     fn render(&self, core_state: &CoreState) {
         assert_eq!(CUI_OFFSET_Y, 4);
         self.win.clear();
-        self.win.attron(pc::COLOR_PAIR(TITLE_COLOR) | pc::A_BOLD);
+        self.win.attron(pc::COLOR_PAIR(TITLE_COLOR.into()) | pc::A_BOLD);
         self.win.printw("Simple Todo App:\n");
         self.win.printw("------------------\n");
         self.win.attroff(pc::A_BOLD);
-        self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
+        self.win.attron(pc::COLOR_PAIR(TEXT_COLOR.into()));
 
         match self.curr_tab {
             Todo => {
-                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
+                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR.into()));
                 self.win.addch('[');
 
-                self.win.attron(pc::COLOR_PAIR(SELECTED_COLOR));
+                self.win.attron(pc::COLOR_PAIR(SELECTED_COLOR.into()));
                 self.win.printw(" Todo ");
 
-                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
+                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR.into()));
                 self.win.addch(']');
-                self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
+                self.win.attron(pc::COLOR_PAIR(TEXT_COLOR.into()));
 
                 self.win.printw("  Done\n\n");
                 self.render_list(Todo, &core_state.todo_list, self.todo_curs);
@@ -339,16 +339,16 @@ impl CuiState {
             Done => {
                 self.win.printw("  Todo  ");
 
-                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
+                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR.into()));
                 self.win.addch('[');
 
-                self.win.attron(pc::COLOR_PAIR(SELECTED_COLOR));
+                self.win.attron(pc::COLOR_PAIR(SELECTED_COLOR.into()));
                 self.win.printw(" Done ");
 
-                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
+                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR.into()));
                 self.win.addch(']');
                 self.win.printw("\n\n");
-                self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
+                self.win.attron(pc::COLOR_PAIR(TEXT_COLOR.into()));
 
                 self.render_list(Done, &core_state.done_list, self.done_curs);
             }
@@ -360,22 +360,22 @@ impl CuiState {
     fn render_list(&self, curr_tab: Tab, list: &Vec<String>, cursor: Option<usize>) {
         let Some(cursor) = cursor else {
             assert_eq!(list.len(), 0);
-            self.win.attron(pc::COLOR_PAIR(INSERTMODE_COLOR));
+            self.win.attron(pc::COLOR_PAIR(INSERTMODE_COLOR.into()));
             match curr_tab {
                 Todo => self.win.printw("There are no TODOs in here, press `a` to add one.\n"),
                 Done => self.win.printw("You have Done nothing, XD.\n"),
             };
-            self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
+            self.win.attron(pc::COLOR_PAIR(TEXT_COLOR.into()));
             return;
         };
         assert_eq!(CUI_OFFSET_X, 5);
         for (i, element) in list.iter().enumerate() {
             if i == cursor {
-                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR));
+                self.win.attron(pc::COLOR_PAIR(INDICATOR_COLOR.into()));
                 self.win.printw("-> | ");
-                self.win.attron(pc::COLOR_PAIR(SELECTED_COLOR));
+                self.win.attron(pc::COLOR_PAIR(SELECTED_COLOR.into()));
                 self.win.printw(format!("{element}\n"));
-                self.win.attron(pc::COLOR_PAIR(TEXT_COLOR));
+                self.win.attron(pc::COLOR_PAIR(TEXT_COLOR.into()));
             }
             else {
                 self.win.printw(format!("  | {element}\n"));
